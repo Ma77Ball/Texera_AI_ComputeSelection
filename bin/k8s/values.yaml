@@ -27,8 +27,8 @@ global:
 #   - false: PVCs will remain after uninstall to preserve the data
 persistence:
   removeAfterUninstall: true
-  minioHostLocalPath: ""
-  postgresqlHostLocalPath: ""
+  minioHostLocalPath: "/home/texera/minio_texera_persistant"
+  postgresqlHostLocalPath: "/home/texera/postgres_texera_persistant"
 
 # Part 1: the configuration of Postgres, Minio and LakeFS
 postgresql:
@@ -50,7 +50,7 @@ postgresql:
     persistence:
       enabled: true
       size: 10Gi
-      storageClass: local-path
+      storageClass: standard
       existingClaim: "postgresql-data-pvc"
 
     initdb:
@@ -72,14 +72,14 @@ minio:
     rootPassword: password
   service:
     # In production, use ClusterIP to avoid exposing the minio to the internet
-    # type: ClusterIP
-    type: NodePort
-    nodePorts:
-      api: 31000
+    type: ClusterIP
+#    type: NodePort
+#    nodePorts:
+#      api: 31000
   persistence:
     enabled: true
     size: 20Gi
-    storageClass: local-path
+    storageClass: standard
     existingClaim: "minio-data-pvc"
 
 lakefs:
@@ -100,7 +100,7 @@ lakefs:
       s3:
         endpoint: http://texera-minio:9000
         pre_signed_expiry: 15m
-        pre_signed_endpoint: http://localhost:31000
+        pre_signed_endpoint: http://cs256-texera.com
         force_path_style: true
         credentials:
           access_key_id: texera_minio
@@ -108,7 +108,7 @@ lakefs:
 
 # Part2: configurations of Texera-related micro services
 texeraImages:
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
 # Example data loader configuration
 exampleDataLoader:
@@ -214,9 +214,9 @@ texeraEnvVars:
   - name: MAX_NUM_OF_RUNNING_COMPUTING_UNITS_PER_USER
     value: "10"
   - name: KUBERNETES_COMPUTING_UNIT_CPU_LIMIT_OPTIONS
-    value: "2"
+    value: "4"
   - name: KUBERNETES_COMPUTING_UNIT_MEMORY_LIMIT_OPTIONS
-    value: "2Gi"
+    value: "4Gi"
   - name: KUBERNETES_COMPUTING_UNIT_GPU_LIMIT_OPTIONS
     value: "0"
   - name: COMPUTING_UNIT_LOCAL_ENABLED
@@ -263,6 +263,7 @@ ingress-nginx:
       type: NodePort
       nodePorts:
         http: 30080
+        https: 30328
     ingressClassResource:
       name: nginx
       enabled: true
@@ -314,7 +315,7 @@ metrics-server:
 ingressPaths:
   enabled: true
   ingressClassName: nginx  # Set to "alb" when deploying on AWS
-  hostname: ""
+  hostname: "cs256-texera.com"
   # Optional TLS secret (manually created)
   tlsSecretName: ""  # e.g., "texera-tls"
   # Optional Issuer name for cert-manager
@@ -361,3 +362,6 @@ ingressPaths:
     - path: /
       serviceName: webserver-svc
       servicePort: 8080
+    - path: /texera-dataset
+      serviceName: texera-minio
+      servicePort: 9000
