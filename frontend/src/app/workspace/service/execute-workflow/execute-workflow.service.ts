@@ -142,18 +142,19 @@ export class ExecuteWorkflowService {
     switch (event.type) {
       case "WorkflowStateEvent":
         let newState = ExecutionState[event.state];
+        const eId = event.eId;
         switch (newState) {
           case ExecutionState.Paused:
             if (this.currentState.state === ExecutionState.Paused) {
-              return this.currentState;
+              return { ...this.currentState, eId };
             } else {
-              return { state: ExecutionState.Paused, currentTuples: {} };
+              return { state: ExecutionState.Paused, currentTuples: {}, eId };
             }
           case ExecutionState.Failed:
             // for failed state, backend will send an additional message after this status event.
             return undefined;
           default:
-            return { state: newState };
+            return { state: newState, eId };
         }
       case "RecoveryStartedEvent":
         return { state: ExecutionState.Recovering };

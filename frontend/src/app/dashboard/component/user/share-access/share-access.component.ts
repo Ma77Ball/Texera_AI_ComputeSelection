@@ -23,7 +23,6 @@ import { ShareAccessService } from "../../../service/user/share-access/share-acc
 import { ShareAccess } from "../../../type/share-access.interface";
 import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
 import { UserService } from "../../../../common/service/user/user.service";
-import { GmailService } from "../../../../common/service/gmail/gmail.service";
 import { NZ_MODAL_DATA, NzModalRef, NzModalService } from "ng-zorro-antd/modal";
 import { NotificationService } from "../../../../common/service/notification/notification.service";
 import { HttpErrorResponse } from "@angular/common/http";
@@ -60,7 +59,6 @@ export class ShareAccessComponent implements OnInit, OnDestroy {
     private accessService: ShareAccessService,
     private formBuilder: FormBuilder,
     private userService: UserService,
-    private gmailService: GmailService,
     private notificationService: NotificationService,
     private message: NzMessageService,
     private modalService: NzModalService,
@@ -152,11 +150,7 @@ export class ShareAccessComponent implements OnInit, OnDestroy {
           .subscribe({
             next: () => {
               this.notificationService.success(this.type + " shared with " + email + " successfully.");
-              this.gmailService.sendEmail(
-                "Texera: " + this.userService.getCurrentUser()?.email + " shared a " + this.type + " with you",
-                message,
-                email
-              );
+
               this.ngOnInit();
             },
             error: (error: unknown) => {

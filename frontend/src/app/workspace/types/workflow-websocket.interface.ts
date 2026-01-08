@@ -47,13 +47,13 @@ export interface WorkflowExecuteRequest
     executionName: string;
     engineVersion: string;
     logicalPlan: LogicalPlan;
-  }> {}
+  }> { }
 
 export interface ReplayExecutionInfo
   extends Readonly<{
     eid: number;
     interaction: string;
-  }> {}
+  }> { }
 
 export interface WorkflowFatalError
   extends Readonly<{
@@ -68,12 +68,12 @@ export interface WorkflowFatalError
       nanos: number;
       seconds: number;
     };
-  }> {}
+  }> { }
 
 export interface WorkflowErrorEvent
   extends Readonly<{
     fatalErrors: ReadonlyArray<WorkflowFatalError>;
-  }> {}
+  }> { }
 
 export type ModifyOperatorLogic = Readonly<{
   operator: LogicalOperator;
@@ -136,7 +136,7 @@ export type OperatorResultCacheStatus = "cache invalid" | "cache valid";
 export interface CacheStatusUpdateEvent
   extends Readonly<{
     cacheStatusMap: Record<string, OperatorResultCacheStatus>;
-  }> {}
+  }> { }
 
 export type PythonExpressionEvaluateRequest = Readonly<{
   expression: string;
@@ -200,6 +200,7 @@ export type DebugCommandRequest = Readonly<{
 
 export type WorkflowStateInfo = Readonly<{
   state: ExecutionState;
+  eId: number;
 }>;
 
 export type TexeraWebsocketRequestTypeMap = {

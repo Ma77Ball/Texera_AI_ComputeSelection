@@ -118,7 +118,6 @@ import { FiltersInstructionsComponent } from "./dashboard/component/user/filters
 import { SearchComponent } from "./dashboard/component/user/search/search.component";
 import { SearchResultsComponent } from "./dashboard/component/user/search-results/search-results.component";
 import { PortPropertyEditFrameComponent } from "./workspace/component/property-editor/port-property-edit-frame/port-property-edit-frame.component";
-import { AdminGmailComponent } from "./dashboard/component/admin/gmail/admin-gmail.component";
 import { PublicProjectComponent } from "./dashboard/component/user/user-project/public-project/public-project.component";
 import { FormlyNgZorroAntdModule } from "@ngx-formly/ng-zorro-antd";
 import { FlarumComponent } from "./dashboard/component/user/flarum/flarum.component";
@@ -182,7 +181,6 @@ registerLocaleData(en);
 @NgModule({
   declarations: [
     FormlyRepeatDndComponent,
-    AdminGmailComponent,
     PublicProjectComponent,
     AppComponent,
     WorkspaceComponent,

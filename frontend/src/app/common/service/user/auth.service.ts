@@ -25,7 +25,6 @@ import { Role, User } from "../../type/user";
 import { ignoreElements } from "rxjs/operators";
 import { JwtHelperService } from "@auth0/angular-jwt";
 import { NotificationService } from "../notification/notification.service";
-import { GmailService } from "../gmail/gmail.service";
 import { GuiConfigService } from "../gui-config.service";
 import { NzModalService } from "ng-zorro-antd/modal";
 
@@ -52,7 +51,6 @@ export class AuthService {
     private http: HttpClient,
     private jwtHelperService: JwtHelperService,
     private notificationService: NotificationService,
-    private gmailService: GmailService,
     private config: GuiConfigService,
     private modal: NzModalService
   ) {}
@@ -135,7 +133,6 @@ export class AuthService {
           "Currently the platform is invitation-only. Please request access from the platform admin or switch to an account that already has access.",
         nzOkText: "Send request to Admin",
         nzCancelText: "Cancel",
-        nzOnOk: () => this.gmailService.notifyUnauthorizedLogin(email),
       });
 
       return this.logout();

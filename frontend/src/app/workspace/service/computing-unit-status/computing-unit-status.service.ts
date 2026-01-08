@@ -278,4 +278,127 @@ export class ComputingUnitStatusService implements OnDestroy {
   public getSelectedComputingUnitValue(): DashboardWorkflowComputingUnit | null {
     return this.selectedUnitSubject.value;
   }
+
+  private parseResourceUnit(resource: string): string {
+    if (!resource || resource === "NaN") return "NaN";
+    const re = /^(\d+(\.\d+)?)([a-zA-Z]*)$/;
+    const match = resource.match(re);
+    if (match) {
+      return match[3] || "";
+    }
+    return "";
+  }
+
+  private parseResourceNumber(resource: string): number {
+    if (!resource || resource === "NaN") return 0;
+    const re = /^(\d+(\.\d+)?)([a-zA-Z]*)$/;
+    const match = resource.match(re);
+    if (match) {
+      return parseFloat(match[1]);
+    }
+    return 0;
+  }
+
+  private cpuResourceConversion(from: string, toUnit: string): number {
+    type CpuUnit = "n" | "u" | "m" | "";
+    const cpuScales: { [key in CpuUnit]: number } = {
+      n: 1,
+      u: 1_000,
+      m: 1_000_000,
+      "": 1_000_000_000,
+    };
+
+    const fromUnit = this.parseResourceUnit(from) as CpuUnit;
+    const fromNumber = this.parseResourceNumber(from);
+
+    const effectiveFromUnit = (fromUnit || "") as CpuUnit;
+    const effectiveToUnit = (toUnit || "") as CpuUnit;
+
+    const fromScaled = fromNumber * (cpuScales[effectiveFromUnit] || cpuScales["m"]);
+    const toScaled = fromScaled / (cpuScales[effectiveToUnit] || cpuScales[""]);
+
+    return toScaled;
+  }
+
+  private memoryResourceConversion(from: string, toUnit: string): number {
+    type MemoryUnit = "Ki" | "Mi" | "Gi" | "";
+    const memoryScales: { [key in MemoryUnit]: number } = {
+      "": 1,
+      Ki: 1024,
+      Mi: 1024 * 1024,
+      Gi: 1024 * 1024 * 1024,
+    };
+
+    const fromUnit = this.parseResourceUnit(from) as MemoryUnit;
+    const fromNumber = this.parseResourceNumber(from);
+
+    const effectiveFromUnit = (fromUnit || "") as MemoryUnit;
+    const effectiveToUnit = (toUnit || "") as MemoryUnit;
+
+    const fromScaled = fromNumber * (memoryScales[effectiveFromUnit] || 1);
+    const toScaled = fromScaled / (memoryScales[effectiveToUnit] || 1);
+
+    return toScaled;
+  }
+
+  /**
+   * Recreates the old getCpuUsagePercentage API.
+   * If `normalized` is true → value in [0,1], otherwise percentage [0,100].
+   */
+  public getCpuUsagePercentage(normalized: boolean): Observable<number> {
+    return this.selectedUnitSubject.pipe(
+      filter((unit): unit is DashboardWorkflowComputingUnit => unit !== null),
+      map(unit => {
+        const usage = unit.metrics.cpuUsage;
+        const limit = unit.computingUnit.resource.cpuLimit;
+
+        if (usage === "N/A" || limit === "N/A") {
+          return 0;
+        }
+
+        // convert both to cores (empty unit means cores)
+        const usageCores = this.cpuResourceConversion(usage, "");
+        const limitCores = this.cpuResourceConversion(limit, "");
+
+        if (limitCores <= 0) {
+          return 0;
+        }
+
+        const percentage = Math.min((usageCores / limitCores) * 100, 100);
+        return normalized ? percentage / 100 : percentage;
+      }),
+      distinctUntilChanged()
+    );
+  }
+
+  /**
+   * Recreates the old getMemoryUsagePercentage API.
+   * If `normalized` is true → value in [0,1], otherwise percentage [0,100].
+   */
+  public getMemoryUsagePercentage(normalized: boolean): Observable<number> {
+    return this.selectedUnitSubject.pipe(
+      filter((unit): unit is DashboardWorkflowComputingUnit => unit !== null),
+      map(unit => {
+        const usage = unit.metrics.memoryUsage;
+        const limit = unit.computingUnit.resource.memoryLimit;
+
+        if (usage === "N/A" || limit === "N/A") {
+          return 0;
+        }
+
+        // convert both to Gi for percentage calculation
+        const usageGi = this.memoryResourceConversion(usage, "Gi");
+        const limitGi = this.memoryResourceConversion(limit, "Gi");
+
+        if (limitGi <= 0) {
+          return 0;
+        }
+
+        const percentage = Math.min((usageGi / limitGi) * 100, 100);
+        return normalized ? percentage / 100 : percentage;
+      }),
+      distinctUntilChanged()
+    );
+  }
+
 }

@@ -29,15 +29,15 @@ export interface PortIdentity
   extends Readonly<{
     id: number;
     internal: boolean;
-  }> {}
-export interface OutputPort extends Readonly<{ id: PortIdentity; displayName: string }> {}
+  }> { }
+export interface OutputPort extends Readonly<{ id: PortIdentity; displayName: string }> { }
 export interface InputPort
   extends Readonly<{
     id: PortIdentity;
     displayName: string;
     allowMultiLinks: boolean;
     dependencies: ReadonlyArray<PortIdentity>;
-  }> {}
+  }> { }
 
 export interface LogicalLink
   extends Readonly<{
@@ -45,14 +45,14 @@ export interface LogicalLink
     fromPortId: PortIdentity;
     toOpId: string;
     toPortId: PortIdentity;
-  }> {}
+  }> { }
 
 export interface LogicalOperator
   extends Readonly<{
     operatorID: string;
     operatorType: string;
     [uniqueAttributes: string]: any;
-  }> {}
+  }> { }
 
 /**
  * LogicalPlan is the backend interface equivalent of frontend interface WorkflowGraph,
@@ -65,7 +65,7 @@ export interface LogicalPlan
     links: LogicalLink[];
     opsToViewResult?: string[];
     opsToReuseResult?: string[];
-  }> {}
+  }> { }
 export enum OperatorState {
   Uninitialized = "Uninitialized",
   Initializing = "Initializing",
@@ -86,12 +86,12 @@ export interface OperatorStatistics
     aggregatedOutputRowCount: number;
     outputPortMetrics: Record<string, number>;
     numWorkers?: number;
-  }> {}
+  }> { }
 
 export interface OperatorStatsUpdate
   extends Readonly<{
     operatorStatistics: Record<string, OperatorStatistics>;
-  }> {}
+  }> { }
 
 export type PaginationMode = { type: "PaginationMode" };
 export type SetSnapshotMode = { type: "SetSnapshotMode" };
@@ -103,13 +103,13 @@ export interface WebPaginationUpdate
     mode: PaginationMode;
     totalNumTuples: number;
     dirtyPageIndices: ReadonlyArray<number>;
-  }> {}
+  }> { }
 
 export interface WebDataUpdate
   extends Readonly<{
     mode: SetSnapshotMode | SetDeltaMode;
     table: ReadonlyArray<object>;
-  }> {}
+  }> { }
 
 export type WebResultUpdate = WebPaginationUpdate | WebDataUpdate;
 
@@ -121,7 +121,7 @@ export interface WorkflowResultUpdateEvent
     updates: WorkflowResultUpdate;
     tableStats: WorkflowResultTableStats;
     sinkStorageMode: string;
-  }> {}
+  }> { }
 
 // user-defined type guards to check the type of the result update
 // because TypeScript can't do Tagged Unions on nested data types https://github.com/microsoft/TypeScript/issues/18758
@@ -159,23 +159,27 @@ export enum ExecutionState {
 
 export type ExecutionStateInfo = Readonly<
   | {
-      state:
-        | ExecutionState.Uninitialized
-        | ExecutionState.Initializing
-        | ExecutionState.Pausing
-        | ExecutionState.Running
-        | ExecutionState.Resuming
-        | ExecutionState.Recovering;
-    }
+    state:
+    | ExecutionState.Uninitialized
+    | ExecutionState.Initializing
+    | ExecutionState.Pausing
+    | ExecutionState.Running
+    | ExecutionState.Resuming
+    | ExecutionState.Recovering;
+    eId?: number;
+  }
   | {
-      state: ExecutionState.Paused;
-      currentTuples: Readonly<Record<string, OperatorCurrentTuples>>;
-    }
+    state: ExecutionState.Paused;
+    currentTuples: Readonly<Record<string, OperatorCurrentTuples>>;
+    eId?: number;
+  }
   | {
-      state: ExecutionState.Completed | ExecutionState.Killed | ExecutionState.Terminated;
-    }
+    state: ExecutionState.Completed | ExecutionState.Killed | ExecutionState.Terminated;
+    eId?: number;
+  }
   | {
-      state: ExecutionState.Failed;
-      errorMessages: ReadonlyArray<WorkflowFatalError>;
-    }
+    state: ExecutionState.Failed;
+    errorMessages: ReadonlyArray<WorkflowFatalError>;
+    eId?: number;
+  }
 >;

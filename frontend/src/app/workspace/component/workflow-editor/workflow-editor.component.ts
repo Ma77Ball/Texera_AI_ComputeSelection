@@ -18,7 +18,7 @@
  */
 
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit } from "@angular/core";
-import { fromEvent, merge, Subject } from "rxjs";
+import { fromEvent, merge, Subject, take } from "rxjs";
 import { NzModalCommentBoxComponent } from "./comment-box-modal/nz-modal-comment-box.component";
 import { NzModalRef, NzModalService } from "ng-zorro-antd/modal";
 import { DragDropService } from "../../service/drag-drop/drag-drop.service";
@@ -43,6 +43,9 @@ import { isDefined } from "../../../common/util/predicate";
 import { GuiConfigService } from "../../../common/service/gui-config.service";
 import { line, curveCatmullRomClosed } from "d3-shape";
 import concaveman from "concaveman";
+import { ComputingUnitStatusService } from "../../service/computing-unit-status/computing-unit-status.service";
+import { StatisticsService } from "src/app/dashboard/service/user/statistics/statistics.service";
+import { DatasetService } from "src/app/dashboard/service/user/dataset/dataset.service";
 
 // jointjs interactive options for enabling and disabling interactivity
 // https://resources.jointjs.com/docs/jointjs/v3.2/joint.html#dia.Paper.prototype.options.interactive
@@ -110,6 +113,9 @@ export class WorkflowEditorComponent implements OnInit, AfterViewInit, OnDestroy
     private operatorMenu: OperatorMenuService,
     private route: ActivatedRoute,
     private router: Router,
+    private computingUnitStatusService: ComputingUnitStatusService,
+    private statisticsService: StatisticsService,
+    private datasetService: DatasetService,
     public nzContextMenu: NzContextMenuService,
     private elementRef: ElementRef,
     private config: GuiConfigService
@@ -266,6 +272,13 @@ export class WorkflowEditorComponent implements OnInit, AfterViewInit, OnDestroy
       });
   }
 
+  private getAverage(numbers: number[]): number {
+    if (numbers.length === 0) return 0;
+    const sum = numbers.reduce((acc, val) => acc + val, 0);
+    return sum / numbers.length;
+  }
+
+
   /**
    * This method subscribe to workflowStatusService's status stream
    * for Each processStatus that has been emitted
@@ -280,6 +293,16 @@ export class WorkflowEditorComponent implements OnInit, AfterViewInit, OnDestroy
    *        - for each operatorInfo, display statistics if there are some saved.
    */
   private handleOperatorStatisticsUpdate(): void {
+    const completedOperators: String[] = [];
+    const WorkflowRunningCpuStats: number[] = [];
+    const WorkflowRunningMemStats: number[] = [];
+    const runningCpuStats: { [key: string]: number[] } = {};
+    const runningMemStats: { [key: string]: number[] } = {};
+    // const startingCpuStats: { [key: string]: number } = {};
+    // const startingMemStats: { [key: string]: number } = {};
+    // const finishedCpuStats: { [key: string]: number } = {};
+    // const finishedMemStats: { [key: string]: number } = {};
+
     this.workflowStatusService
       .getStatusUpdateStream()
       .pipe(untilDestroyed(this))
@@ -296,6 +319,66 @@ export class WorkflowEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 ...status[op.operatorID],
                 operatorState: OperatorState.Recovering,
               };
+            } else if (this.executeWorkflowService.getExecutionState().state === ExecutionState.Initializing) {
+              completedOperators.length = 0;
+            } else if (this.executeWorkflowService.getExecutionState().state === ExecutionState.Running) {
+              if (!runningCpuStats[op.operatorID]) {
+                runningCpuStats[op.operatorID] = [];
+                runningMemStats[op.operatorID] = [];
+              }
+              if (!completedOperators.includes(op.operatorID) && status[op.operatorID].operatorState == "Completed") {
+                completedOperators.push(op.operatorID);
+                console.log(
+                  op.operatorID.split("-").slice(0, 2).join("-"),
+                  " stats: ",
+                  runningCpuStats[op.operatorID][0],
+                  "\t",
+                  this.getAverage(runningCpuStats[op.operatorID]),
+                  "\t",
+                  Math.max(...runningCpuStats[op.operatorID]),
+                  "\t",
+                  Math.min(...runningCpuStats[op.operatorID]),
+                  "\t",
+                  runningCpuStats[op.operatorID][runningCpuStats[op.operatorID].length - 1],
+                  "\t",
+                  runningMemStats[op.operatorID][0],
+                  "\t",
+                  this.getAverage(runningMemStats[op.operatorID]),
+                  "\t",
+                  Math.max(...runningMemStats[op.operatorID]),
+                  "\t",
+                  Math.min(...runningMemStats[op.operatorID]),
+                  "\t",
+                  runningMemStats[op.operatorID][runningMemStats[op.operatorID].length - 1]
+                );
+                this.statisticsService.saveWorkflowStats({
+                  workflow_id: this.workflowActionService.getWorkflowMetadata()?.wid as number,
+                  execution_id: this.executeWorkflowService.getExecutionState().eId as number,
+                  cpu_usage_start: runningCpuStats[op.operatorID][0],
+                  cpu_usage_avg: this.getAverage(runningCpuStats[op.operatorID]),
+                  cpu_usage_max: Math.max(...runningCpuStats[op.operatorID]),
+                  cpu_usage_end: runningCpuStats[op.operatorID].slice(-1)[0],
+                  mem_usage_start: runningMemStats[op.operatorID][0],
+                  mem_usage_avg: this.getAverage(runningMemStats[op.operatorID]),
+                  mem_usage_max: Math.max(...runningMemStats[op.operatorID]),
+                  mem_usage_end: runningMemStats[op.operatorID].slice(-1)[0],
+                }).subscribe();
+              } else {
+                this.computingUnitStatusService
+                  .getCpuUsagePercentage(false)
+                  .pipe(take(1))
+                  .subscribe(cpuUsage => {
+                    runningCpuStats[op.operatorID].push(cpuUsage);
+                    WorkflowRunningCpuStats.push(cpuUsage);
+                  });
+                this.computingUnitStatusService
+                  .getMemoryUsagePercentage(false)
+                  .pipe(take(1))
+                  .subscribe(memUsage => {
+                    runningMemStats[op.operatorID].push(memUsage);
+                    WorkflowRunningMemStats.push(memUsage);
+                  });
+              }
             }
 
             this.jointUIService.changeOperatorStatistics(

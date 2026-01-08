@@ -87,9 +87,9 @@ class WorkflowExecutionService(
 
   private def createStateEvent(state: ExecutionMetadataStore): WorkflowStateEvent = {
     if (state.isRecovering && state.state != COMPLETED) {
-      WorkflowStateEvent("Recovering")
+      WorkflowStateEvent("Recovering", workflowContext.executionId.id)
     } else {
-      WorkflowStateEvent(Utils.aggregatedStateToString(state.state))
+      WorkflowStateEvent(Utils.aggregatedStateToString(state.state), workflowContext.executionId.id)
     }
   }
 

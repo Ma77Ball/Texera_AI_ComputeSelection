@@ -1,49 +1,49 @@
 {
   "/api/compile": {
-    "target": "cs256-texera.com",
+    "target": "http://cs256-texera.com",
     "secure": false,
     "changeOrigin": true
   },
   "/api/dataset": {
-    "target": "cs256-texera.com",
+    "target": "http://cs256-texera.com",
     "secure": false,
     "changeOrigin": true
   },
   "/api/access/dataset/**": {
-    "target": "cs256-texera.com",
+    "target": "http://cs256-texera.com",
     "secure": false,
     "changeOrigin": true
   },
   "/api/access/computing-unit/**": {
-    "target": "cs256-texera.com",
+    "target": "http://cs256-texera.com",
     "secure": false,
     "changeOrigin": true
   },
   "/api/config/**": {
-    "target": "cs256-texera.com",
+    "target": "http://cs256-texera.com",
     "secure": false,
     "changeOrigin": true
   },
   "/api/computing-unit": {
-    "target": "cs256-texera.com",
+    "target": "http://cs256-texera.com",
     "secure": false,
     "changeOrigin": true
   },
   "/api": {
-    "target": "cs256-texera.com",
+    "target": "http://cs256-texera.com",
     "secure": false,
-    "changeOrigin": false
+    "changeOrigin": true
   },
   "/wsapi": {
-    "target": "cs256-texera.com",
+    "target": "http://cs256-texera.com",
     "secure": false,
-    "changeOrigin": false,
+    "changeOrigin": true,
     "ws": true
   },
   "/rtc": {
-    "target": "cs256-texera.com",
+    "target": "http://cs256-texera.com",
     "ws": true,
     "secure": false,
-    "changeOrigin": false
+    "changeOrigin": true
   }
 }
